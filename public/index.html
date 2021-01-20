@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Monitor</title>
+    <script src="assets/js/jquery3.3.1.js"></script>
+</head>
+<body>
+    <h1>login</h1>
+    <form>
+        <h3>Username: <input type="text" id="user-name"></h3>
+        <h3>Password: <input type="password" id="password"></h3>
+    </form>
+    <button onclick="login()">Login</button>
+
+    <script src="assets/js/storage.js"></script>
+    <!-- <script src="assets/js/authentication.js"></script> -->
+    <script src="assets/js/md5-js.js"></script>
+    <script src="assets/js/sha256.js"></script>
+    <script src="assets/js/aes-js.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script>
+       const server = window.location.href;
+    function login() {
+      event.preventDefault();
+      console.log("Logging in");
+      let userName = (document.getElementById("user-name").value).toLowerCase();
+      let password = document.getElementById("password").value
+      console.log("User Name:", userName);
+      console.log("Password:", password);
+      let loginInfo = {
+        username: userName,
+        password: password
+      }
+      if (userName === "" || password === "") {
+        console.log("Username or Password can not be blank");
+      } else {
+        let loginInfoStringified = JSON.stringify(loginInfo);
+        let loginInfoEncoded = btoa(loginInfoStringified);
+        const URL = server + 'api/login';
+        $.post(URL, loginInfoEncoded, function (data, status) {
+          // console.log("Passed data:", data.jwToken);
+          if (data.jwToken === "Not Authenticated") {
+            console.log("Login Failed");
+          } else {
+            console.log("Login Successfull")
+            localStorage.clear();
+            // localStorage.setItem('JWT', JSON.stringify(data.jwToken));
+            let hashedToken = hex_sha256(data.jwToken)
+            let keyedToken = generateKey(hashedToken)
+            let encryptedMasterHash = encrypt(keyedToken, hex_sha256(password))
+            // console.log("Master Hash:", hex_sha256(password))
+            updateLocalStorage({jwt: data.jwToken, user: userName, key: encryptedMasterHash});
+            // hideShowLogin();
+            // hideShowLogout();
+            // Navigate to dashboard
+            window.location.replace(`${server}dashboard`);
+          }
+        })
+      }
+      document.getElementById("user-name").value = ""
+      document.getElementById("password").value = ""
+    //   document.getElementById("logged-in").innerHTML=`Logged in as ${userName}`
+    } 
+    </script>
+</body>
+</html>

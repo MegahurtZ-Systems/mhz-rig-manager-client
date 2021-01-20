@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHZ Crypto Monitor</title>
+    <script src="assets/js/jquery3.3.1.js"></script>
+    <script src="assets/js/md5-js.js"></script>
+    <script src="assets/js/sha256.js"></script>
+    <script src="assets/js/aes-js.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/authentication.js"></script>
+</head>
+
+<body>
+    <h1>Dashboard</h1>
+    <span>
+        <h3>Status: </h3>
+        <p id="status-running">Stopped</p>
+    </span>
+    <button onclick="getStatus()">Get Status</button>
+    <button onclick="startMiner()">Start Miner</button>
+    <button onclick="stopMiner()">Stop Miner</button>
+    <br>
+    <textarea id="nvidia-status" rows="30" cols="80"></textarea>
+    <textarea id="logs" rows="30" cols="100"></textarea>
+
+    <script>
+        // const server = window.location.href;
+        function getStatus() {
+            const URL = server + '/api/miner/status';
+            // console.log("URL:", URL)
+            let localStore = JSON.parse(localStorage.getItem('PWM'))
+            let hashedToken = hex_sha256(localStore.jwt)
+            let keyedToken = generateKey(hashedToken)
+            let decryptedMasterHash = decrypt(keyedToken, localStore.key)
+            let masterHashKey = generateKey(decryptedMasterHash)
+            $.ajax({
+                type: 'POST',
+                url: URL,
+                dataType: 'json',
+                headers: {
+                    'authorization': 'Bearer ' + JSON.stringify(localStore.jwt)
+                },
+                data: {
+                    username: localStore.user,
+                }
+            }).done(function (data) {
+                // console.log('status:', data.log.length);
+                if(data.running == true){
+                    document.getElementById('status-running').innerHTML = "Running"
+                } else {
+                    document.getElementById('status-running').innerHTML = "Stopped"
+                }
+                document.getElementById('nvidia-status').value = data.nvidia
+                let logString = "";
+                for (let i = data.log.length - 30; i < data.log.length; i++){
+                    // log.push(data.log[i]);
+                    logString = logString + data.log[i] + "\n";
+                }
+                let logTextArea = document.getElementById('logs')
+                logTextArea.value = logString;
+                logTextArea.scrollTop = logTextArea.scrollHeight;
+            })
+        };
+
+        function startMiner() {
+            const URL = server + '/api/miner/start';
+            // console.log("URL:", URL)
+            let localStore = JSON.parse(localStorage.getItem('PWM'))
+            let hashedToken = hex_sha256(localStore.jwt)
+            let keyedToken = generateKey(hashedToken)
+            let decryptedMasterHash = decrypt(keyedToken, localStore.key)
+            let masterHashKey = generateKey(decryptedMasterHash)
+            $.ajax({
+                type: 'POST',
+                url: URL,
+                dataType: 'json',
+                headers: {
+                    'authorization': 'Bearer ' + JSON.stringify(localStore.jwt)
+                },
+                data: {
+                    username: localStore.user,
+                }
+            }).done(function (data) {
+                console.log('status:', data);
+            })
+        }
+
+        function stopMiner() {
+            const URL = server + '/api/miner/stop';
+            // console.log("URL:", URL)
+            let localStore = JSON.parse(localStorage.getItem('PWM'))
+            let hashedToken = hex_sha256(localStore.jwt)
+            let keyedToken = generateKey(hashedToken)
+            let decryptedMasterHash = decrypt(keyedToken, localStore.key)
+            let masterHashKey = generateKey(decryptedMasterHash)
+            $.ajax({
+                type: 'POST',
+                url: URL,
+                dataType: 'json',
+                headers: {
+                    'authorization': 'Bearer ' + JSON.stringify(localStore.jwt)
+                },
+                data: {
+                    username: localStore.user,
+                }
+            }).done(function (data) {
+                console.log('status:', data);
+            })
+        }
+
+        setInterval(() => {
+            getStatus()
+        }, 5000);
+
+    </script>
+</body>
+
+</html>
